@@ -93,10 +93,10 @@
 
   <div class="board" style="position: relative; height: 300px">
     {#each playedCards as { cards, rotation, x, y }}
-      <div class="board-item" style="rotate: {rotation}deg; translate: {x}px {y}px">
+      <div class="board-item" style="rotate: {rotation}deg; translate: {x}px {y}px; --items: {cards.length}" >
         {#each cards as card}
           <div class="image">
-            <img in:receive={{ key: card }} src="{card}.svg" class="logo" alt={card} />
+            <img in:receive={{ key: card }} src="{card}.svg" class="logo" alt={card}  />
           </div>
         {/each}
       </div>
@@ -145,27 +145,30 @@
     display: grid;
     place-items: center;
     grid-template-columns: 1fr;
+    overflow: hidden;
   }
 
   .board-item {
     grid-row-start: 1;
     grid-column-start: 1;
-    display: flex;
-    pointer-events: none;
+    width: 100%;
+    justify-content: center;
   }
 
   .board-item .image {
+    display: inline-block;
     position: relative;
+  }
+
+  .board-item .image {
+    margin-left: calc(-5em + clamp(1.4em, calc(calc(100vw / var(--items) - 2.5em)), 5em));
   }
 
   .board-item:not(:last-child) .image::after {
     position: absolute;
     content: '';
     background-color: black;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    inset: 0;
     border-radius: 10px;
     opacity: 50%;
   }
