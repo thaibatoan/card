@@ -1,22 +1,28 @@
 <script lang="ts">
   import { flip } from 'svelte/animate';
   import { crossfade, fly } from 'svelte/transition';
+  import type { Card } from './constant';
+  import { RANKS, RANK_MAP, SUITS, SUIT_MAP } from './constant';
+  import { getCombinationType } from './logic';
   import StackedCards from './lib/StackedCards.svelte';
-  import { randomInt, getCardNumberAndType } from './utils.ts';
-  import { cards, cardsMap, cardTypes, cardTypesMap } from './constant.ts';
-  import type { Card } from './constant.ts';
+  import { getCardRankAndSuit, randomInt } from './utils';
 
   const [send, receive] = crossfade({});
 
-  let currentCards = randomHand();
+  interface CurrentCard {
+    card: Card;
+    selected: boolean;
+  }
 
-  let playedCards: [{cards: Card[], rotation: number, x: number, y: number}] = [
+  let currentCards: CurrentCard[] = randomHand();
+
+  let playedCards: { cards: Card[]; rotation: number; x: number; y: number }[] = [
     { cards: ['3♠️', '4♠️', '5♠️'], rotation: randomInt(-30, 30), x: randomInt(-50, 50), y: randomInt(-50, 50) },
     { cards: ['6♠️', '7♠️', '8♠️'], rotation: randomInt(-30, 30), x: randomInt(-50, 50), y: randomInt(-50, 50) },
     { cards: ['9♠️', '10♠️', 'J♠️'], rotation: randomInt(-30, 30), x: randomInt(-50, 50), y: randomInt(-50, 50) },
   ];
 
-  function selectCard(card) {
+  function selectCard(card: Card) {
     const selectedCard = currentCards.find((c) => c.card === card);
     selectedCard.selected = !selectedCard.selected;
     currentCards = [...currentCards];
@@ -26,13 +32,13 @@
 
   let showHand = false;
 
-  function sendCards() {
-    const selectedCards = currentCards.filter(({ selected }) => selected).map(({ card }) => card);
+  function sendCards(): void {
+    const selectedCards: Card[] = currentCards.filter(({ selected }) => selected).map(({ card }) => card);
     playedCards = [...playedCards, { cards: selectedCards, rotation: 0, x: 0, y: randomInt(-50, 50) }];
     currentCards = currentCards.filter(({ selected }) => !selected);
   }
 
-  function dealCards() {
+  function dealCards(): void {
     if (showHand) {
       showHand = false;
       currentCards = randomHand();
@@ -41,10 +47,9 @@
       showHand = true;
       setTimeout(() => {
         currentCards = currentCards.sort(({ card: card1 }, { card: card2 }) => {
-          const [number1, type1] = getCardNumberAndType(card1);
-          const [number2, type2] = getCardNumberAndType(card2);
-          console.log(type1, cardTypesMap[type1],  type2, cardTypesMap[type2])
-          return cardsMap[number1] - cardsMap[number2] || cardTypesMap[type1] - cardTypesMap[type2];
+          const [number1, type1] = getCardRankAndSuit(card1);
+          const [number2, type2] = getCardRankAndSuit(card2);
+          return RANK_MAP[number1] - RANK_MAP[number2] || SUIT_MAP[type1] - SUIT_MAP[type2];
         });
       }, 1800);
 
@@ -52,29 +57,31 @@
         number++;
         if (number >= 13) {
           clearInterval(timer);
-          return;
         }
       }, 100);
     }
   }
 
-  function randomHand() {
-    const result = new Set<string>();
+  function randomHand(): CurrentCard[] {
+    const result = new Set<Card>();
 
     while (result.size < 13) {
-      const cardNumber = cards[randomInt(0, 12)];
-      const cardType = cardTypes[randomInt(0, 3)];
-      result.add(`${cardNumber}${cardType}`);
+      const rank = RANKS[randomInt(0, 12)];
+      const suit = SUITS[randomInt(0, 3)];
+      result.add(`${rank}${suit}`);
     }
     return [...result].map((card) => ({ card, selected: false }));
   }
 
   function isValid() {
-    const selectedCards = currentCards.filter(({ selected }) => selected).map(({ card }) => card);
+    const selectedCards: Card[] = currentCards.filter(({ selected }) => selected).map(({ card }) => card);
     if (playedCards.length > 0) {
       const lastCards = playedCards.at(-1).cards;
     }
   }
+
+  $: selectedCards = currentCards.filter(({ selected }) => selected).map(({ card }) => card);
+  $: isValidMove = getCombinationType(selectedCards) !== 'none';
 </script>
 
 <main>
@@ -108,20 +115,21 @@
           class="logo"
           alt={card}
           on:click={() => selectCard(card)}
+          on:keypress={() => {}}
         />
       {/each}
     </div>
   {/if}
 
   <div style="padding: 2em">
-    <button on:click={sendCards}>Send</button>
+    <button on:click={sendCards} disabled={!isValidMove}>Send</button>
     <button on:click={dealCards}>Deal</button>
   </div>
 
-  {#each cardTypes as cardType}
+  {#each SUITS as suit}
     <div>
-      {#each cards as card}
-        <img src="{card}{cardType}.svg" class="logo" alt={card} />
+      {#each RANKS as rank}
+        <img src="{rank}{suit}.svg" class="logo" alt={rank} />
       {/each}
     </div>
   {/each}
@@ -162,15 +170,15 @@
     opacity: 50%;
   }
 
-  .hand img+img {
-    margin-left: -3.6em
+  .hand img + img {
+    margin-left: -3.6em;
   }
   .hand img.selected {
     translate: 0 -1.5em;
   }
   .hand img:hover {
     z-index: 99;
-    position:relative;
+    position: relative;
     filter: drop-shadow(0 0 2em #646cffaa);
   }
 </style>

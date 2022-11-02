@@ -1,4 +1,4 @@
-export const cards = [
+export const RANKS = [
   '3',
   '4',
   '5',
@@ -13,7 +13,7 @@ export const cards = [
   'A',
   '2',
 ] as const;
-export const cardsMap = {
+export const RANK_MAP = {
   '3': 0,
   '4': 1,
   '5': 2,
@@ -29,14 +29,14 @@ export const cardsMap = {
   '2': 12,
 } as const;
 
-export const cardTypes = ['♠️', '♣️', '♦️', '♥️'] as const;
-export const cardTypesMap = {
+export const SUITS = ['♠️', '♣️', '♦️', '♥️'] as const;
+export const SUIT_MAP = {
   '♠️': 0,
   '♣️': 1,
   '♦️': 2,
   '♥️': 3,
 } as const;
 
-export type CardRank = keyof typeof cardsMap;
-export type CardSuit = keyof typeof cardTypesMap;
+export type CardRank = keyof typeof RANK_MAP;
+export type CardSuit = keyof typeof SUIT_MAP;
 export type Card = `${CardRank}${CardSuit}`;
